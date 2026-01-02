@@ -6,6 +6,9 @@ import Providers from '@/components/Providers';
 export const metadata: Metadata = {
   title: 'Memory Match Madness',
   description: 'Win USDC prizes by matching pairs!',
+  other: {
+    'base:app_id': '69584622c63ad876c9081e30',
+  },
 };
 
 export default function RootLayout({
