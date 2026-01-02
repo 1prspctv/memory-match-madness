@@ -233,11 +233,27 @@ export default function MemoryMatchGame() {
       // Reload leaderboards
       await loadLeaderboards();
 
-      // Trigger automatic payout from backend if player won
       console.log('=== PRIZE CHECK START ===');
       console.log('Player address:', address);
-      console.log('Score:', score);
-      console.log('Checking for prize eligibility...');
+      console.log('Player score:', score);
+
+      // Check Supabase leaderboards (what UI shows)
+      const supabaseDailyTop = dailyLeaderboard[0]?.score || 0;
+      const supabaseAllTimeTop = allTimeLeaderboard[0]?.score || 0;
+      
+      const beatsDailyInSupabase = score > supabaseDailyTop;
+      const beatsAllTimeInSupabase = score > supabaseAllTimeTop;
+
+      console.log('Supabase state:', {
+        dailyTopScore: supabaseDailyTop,
+        allTimeTopScore: supabaseAllTimeTop,
+        beatsDailyInSupabase,
+        beatsAllTimeInSupabase,
+      });
+
+      // ALWAYS trigger payout API to keep contract in sync
+      // The API will check contract state and decide if they actually get paid
+      console.log('Triggering payout API to sync contract...');
       
       const payoutResponse = await fetch('/api/trigger-payout', {
         method: 'POST',
@@ -245,6 +261,7 @@ export default function MemoryMatchGame() {
         body: JSON.stringify({
           walletAddress: address,
           score: score,
+          supabaseWinner: beatsDailyInSupabase || beatsAllTimeInSupabase,
         }),
       });
 
@@ -254,29 +271,32 @@ export default function MemoryMatchGame() {
         console.error('Payout API error:', payoutResponse.status, payoutResponse.statusText);
         const errorText = await payoutResponse.text();
         console.error('Error details:', errorText);
-      }
-
-      const payoutResult = await payoutResponse.json();
-      console.log('Payout result:', payoutResult);
-      
-      if (payoutResult.winner) {
-        console.log('🎉 WINNER DETECTED!');
-        console.log('Won Daily:', payoutResult.wonDaily);
-        console.log('Won All-Time:', payoutResult.wonAllTime);
-        console.log('Daily Prize:', payoutResult.dailyPrize);
-        console.log('All-Time Prize:', payoutResult.allTimePrize);
-        console.log('TX Hash:', payoutResult.transactionHash);
-        
-        // Show prize celebration screen
-        setPrizeStatus({
-          wonDaily: payoutResult.wonDaily,
-          wonAllTime: payoutResult.wonAllTime,
-          dailyAmount: payoutResult.dailyPrize || "0",
-          allTimeAmount: payoutResult.allTimePrize || "0",
-        });
       } else {
-        console.log('No prize won.');
-        console.log('Reason:', payoutResult.message);
+        const payoutResult = await payoutResponse.json();
+        console.log('Payout result:', payoutResult);
+        
+        // Show prize screen if they won according to contract
+        if (payoutResult.winner) {
+          console.log('🎉 CONTRACT CONFIRMED WINNER!');
+          console.log('Won Daily:', payoutResult.wonDaily);
+          console.log('Won All-Time:', payoutResult.wonAllTime);
+          console.log('Daily Prize:', payoutResult.dailyPrize);
+          console.log('All-Time Prize:', payoutResult.allTimePrize);
+          
+          // Show prize celebration screen
+          setPrizeStatus({
+            wonDaily: payoutResult.wonDaily,
+            wonAllTime: payoutResult.wonAllTime,
+            dailyAmount: payoutResult.dailyPrize || "0",
+            allTimeAmount: payoutResult.allTimePrize || "0",
+          });
+        } else {
+          console.log('Contract says: Not a winner');
+          if (beatsDailyInSupabase || beatsAllTimeInSupabase) {
+            console.warn('⚠️ SYNC ISSUE: Supabase shows winner but contract does not!');
+            console.warn('This means contract has stale/incorrect high scores');
+          }
+        }
       }
       
       console.log('=== PRIZE CHECK END ===');
@@ -350,7 +370,7 @@ export default function MemoryMatchGame() {
   const dailyPool = contractState ? formatUSDC(contractState[0].toString()) : "0";
   const allTimePool = contractState ? formatUSDC(contractState[1].toString()) : "0";
 
-  const VERSION = "1.1";
+  const VERSION = "1.4";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-800 to-cyan-900 flex items-center justify-center p-4">
@@ -719,7 +739,7 @@ export default function MemoryMatchGame() {
         
         {/* Version Number */}
         <div className="text-center mt-4">
-          <p className="text-xs text-white/40">v{VERSION}</p>
+          <p className="text-xs text-white/70 font-semibold">v{VERSION}</p>
         </div>
       </div>
     </div>
