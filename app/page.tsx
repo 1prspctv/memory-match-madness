@@ -209,7 +209,7 @@ export default function MemoryMatchGame() {
     if (!address) return;
 
     setSubmittingScore(true);
-    setLastPlayedScore(score); // Track the score from this game
+    setLastPlayedScore(score);
     
     try {
       // Refetch contract state to get updated pool amounts after playGame transaction
@@ -233,95 +233,36 @@ export default function MemoryMatchGame() {
       // Reload leaderboards
       await loadLeaderboards();
 
-      // Check if player won by comparing to contract state
-      const state = contractState as any;
-      const dailyHighScore = state ? Number(state[2]) : 0;
-      const allTimeHighScore = state ? Number(state[3]) : 0;
-      const dailyPoolAmount = state ? formatUSDC(state[0].toString()) : "0";
-      const allTimePoolAmount = state ? formatUSDC(state[1].toString()) : "0";
+      // Trigger automatic payout from backend if player won
+      console.log('Checking for prize eligibility...');
       
-      // If player beat a high score, they won! 
-      // Note: Pool amounts might be cached/stale, but if they beat the score, there's always a prize
-      // (because they just paid $0.10 which added to the pools)
-      const wonDaily = score > dailyHighScore;
-      const wonAllTime = score > allTimeHighScore;
+      const payoutResponse = await fetch('/api/trigger-payout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress: address,
+          score: score,
+        }),
+      });
 
-      // If player won, show prize screen FIRST (before submitting to contract)
-      if (wonDaily || wonAllTime) {
-        console.log('🎉 Winner detected! Showing prize screen...');
+      const payoutResult = await payoutResponse.json();
+      
+      if (payoutResult.winner) {
+        console.log('🎉 Winner! Prize sent automatically:', payoutResult);
         
-        // Use minimum prize amounts if pools show as empty (cached state issue)
-        const displayDailyAmount = Number(dailyPoolAmount) > 0 ? dailyPoolAmount : "0.06";
-        const displayAllTimeAmount = Number(allTimePoolAmount) > 0 ? allTimePoolAmount : "0.02";
-        
+        // Show prize celebration screen
         setPrizeStatus({
-          wonDaily,
-          wonAllTime,
-          dailyAmount: wonDaily ? displayDailyAmount : "0",
-          allTimeAmount: wonAllTime ? displayAllTimeAmount : "0",
+          wonDaily: payoutResult.wonDaily,
+          wonAllTime: payoutResult.wonAllTime,
+          dailyAmount: payoutResult.dailyPrize || "0",
+          allTimeAmount: payoutResult.allTimePrize || "0",
         });
       } else {
         console.log('No prize won. Score saved to leaderboard only.');
       }
 
     } catch (error) {
-      console.error('Failed to save score:', error);
-    } finally {
-      setSubmittingScore(false);
-    }
-  };
-
-  const closePrizeScreen = async () => {
-    if (!prizeStatus) return;
-    
-    setSubmittingScore(true);
-    try {
-      console.log('Claiming prize...');
-      
-      // Attempt to submit score
-      await writeContractAsync({
-        address: PRIZE_POOL_CONTRACT,
-        abi: PRIZE_POOL_ABI,
-        functionName: 'submitScore',
-        args: [BigInt(finalScore)],
-      });
-      
-      console.log('✅ Prize claimed and sent to wallet!');
-      
-      // Close prize screen and show end screen
-      setPrizeStatus(null);
-      
-      // Refetch pools after prize screen closes
-      setTimeout(async () => {
-        await refetchContractState();
-      }, 1500);
-      
-    } catch (error: any) {
-      console.error('Failed to claim prize:', error);
-      
-      // Parse error and show helpful message
-      let errorMessage = 'Transaction failed. ';
-      
-      if (error?.message?.includes('insufficient funds') || error?.message?.includes('gas')) {
-        errorMessage = '⛽ Insufficient ETH for gas fees.\n\n' +
-                      'You need a small amount of ETH on Base to claim your prize.\n\n' +
-                      `Send ~$1 of ETH to: ${address}\n\n` +
-                      'Then try claiming again!';
-      } else if (error?.message?.includes('rejected') || error?.message?.includes('denied')) {
-        errorMessage = '🚫 Transaction was rejected in your wallet.\n\n' +
-                      'Please approve the transaction to claim your prize.';
-      } else if (error?.message?.includes('network')) {
-        errorMessage = '🌐 Network error.\n\n' +
-                      'Please check your connection and try again.';
-      } else {
-        errorMessage = `❌ Transaction failed: ${error?.message?.slice(0, 100) || 'Unknown error'}\n\n` +
-                      'Please try again!';
-      }
-      
-      alert(errorMessage);
-      
-      // DON'T close prize screen - let them try again
-      
+      console.error('Failed to save score or trigger payout:', error);
     } finally {
       setSubmittingScore(false);
     }
@@ -606,18 +547,20 @@ export default function MemoryMatchGame() {
               </>
             )}
 
-            <div className="bg-blue-50 border-2 border-blue-500 rounded-xl p-4 mb-6">
-              <p className="text-sm text-blue-800">
-                💡 Click below to claim your prize! This will submit your score to the blockchain and send USDC to your wallet.
+            <div className="bg-green-50 border-2 border-green-500 rounded-xl p-4 mb-6">
+              <p className="text-sm text-green-800 font-semibold">
+                ✅ Prize has been sent to your wallet automatically!
+              </p>
+              <p className="text-xs text-green-700 mt-1">
+                Check your USDC balance - it should update in ~30 seconds.
               </p>
             </div>
 
             <button
-              onClick={closePrizeScreen}
-              disabled={submittingScore}
-              className="w-full bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-bold py-4 px-8 rounded-xl hover:from-emerald-700 hover:to-cyan-700 transition-all transform hover:scale-105 shadow-lg text-xl disabled:opacity-50"
+              onClick={() => setPrizeStatus(null)}
+              className="w-full bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-bold py-4 px-8 rounded-xl hover:from-emerald-700 hover:to-cyan-700 transition-all transform hover:scale-105 shadow-lg text-xl"
             >
-              {submittingScore ? '⏳ Claiming Prize...' : '🎁 Claim Prize'}
+              Continue →
             </button>
           </div>
         )}
