@@ -234,6 +234,9 @@ export default function MemoryMatchGame() {
       await loadLeaderboards();
 
       // Trigger automatic payout from backend if player won
+      console.log('=== PRIZE CHECK START ===');
+      console.log('Player address:', address);
+      console.log('Score:', score);
       console.log('Checking for prize eligibility...');
       
       const payoutResponse = await fetch('/api/trigger-payout', {
@@ -245,10 +248,24 @@ export default function MemoryMatchGame() {
         }),
       });
 
+      console.log('Payout API response status:', payoutResponse.status);
+      
+      if (!payoutResponse.ok) {
+        console.error('Payout API error:', payoutResponse.status, payoutResponse.statusText);
+        const errorText = await payoutResponse.text();
+        console.error('Error details:', errorText);
+      }
+
       const payoutResult = await payoutResponse.json();
+      console.log('Payout result:', payoutResult);
       
       if (payoutResult.winner) {
-        console.log('🎉 Winner! Prize sent automatically:', payoutResult);
+        console.log('🎉 WINNER DETECTED!');
+        console.log('Won Daily:', payoutResult.wonDaily);
+        console.log('Won All-Time:', payoutResult.wonAllTime);
+        console.log('Daily Prize:', payoutResult.dailyPrize);
+        console.log('All-Time Prize:', payoutResult.allTimePrize);
+        console.log('TX Hash:', payoutResult.transactionHash);
         
         // Show prize celebration screen
         setPrizeStatus({
@@ -258,8 +275,11 @@ export default function MemoryMatchGame() {
           allTimeAmount: payoutResult.allTimePrize || "0",
         });
       } else {
-        console.log('No prize won. Score saved to leaderboard only.');
+        console.log('No prize won.');
+        console.log('Reason:', payoutResult.message);
       }
+      
+      console.log('=== PRIZE CHECK END ===');
 
     } catch (error) {
       console.error('Failed to save score or trigger payout:', error);
@@ -329,6 +349,8 @@ export default function MemoryMatchGame() {
 
   const dailyPool = contractState ? formatUSDC(contractState[0].toString()) : "0";
   const allTimePool = contractState ? formatUSDC(contractState[1].toString()) : "0";
+
+  const VERSION = "1.1";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-800 to-cyan-900 flex items-center justify-center p-4">
@@ -694,6 +716,11 @@ export default function MemoryMatchGame() {
             </div>
           </div>
         )}
+        
+        {/* Version Number */}
+        <div className="text-center mt-4">
+          <p className="text-xs text-white/40">v{VERSION}</p>
+        </div>
       </div>
     </div>
   );

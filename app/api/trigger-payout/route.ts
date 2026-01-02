@@ -41,17 +41,32 @@ const PRIZE_POOL_ABI = [
 ] as const;
 
 export async function POST(req: NextRequest) {
+  console.log('=== PAYOUT API CALLED ===');
+  
   try {
-    const { walletAddress, score } = await req.json();
+    const body = await req.json();
+    const { walletAddress, score } = body;
+
+    console.log('Request body:', { walletAddress, score });
 
     if (!walletAddress || !score) {
+      console.error('Missing required fields');
       return NextResponse.json(
         { error: 'Missing walletAddress or score' },
         { status: 400 }
       );
     }
 
+    if (!PAYOUT_PRIVATE_KEY) {
+      console.error('PAYOUT_PRIVATE_KEY not configured');
+      return NextResponse.json(
+        { error: 'Payout wallet not configured' },
+        { status: 500 }
+      );
+    }
+
     // 1. Read current contract state
+    console.log('Reading contract state...');
     const publicClient = createPublicClient({
       chain: base,
       transport: http(),
@@ -64,12 +79,28 @@ export async function POST(req: NextRequest) {
     });
 
     const [dailyPool, allTimePool, dailyHighScore, allTimeHighScore] = contractState;
+    
+    console.log('Contract state:', {
+      dailyPool: dailyPool.toString(),
+      allTimePool: allTimePool.toString(),
+      dailyHighScore: dailyHighScore.toString(),
+      allTimeHighScore: allTimeHighScore.toString(),
+    });
 
     // 2. Determine if player won
     const wonDaily = score > Number(dailyHighScore);
     const wonAllTime = score > Number(allTimeHighScore);
 
+    console.log('Win check:', {
+      playerScore: score,
+      dailyHighScore: Number(dailyHighScore),
+      allTimeHighScore: Number(allTimeHighScore),
+      wonDaily,
+      wonAllTime,
+    });
+
     if (!wonDaily && !wonAllTime) {
+      console.log('Player did not win');
       return NextResponse.json({
         winner: false,
         message: 'Score did not beat high scores',
