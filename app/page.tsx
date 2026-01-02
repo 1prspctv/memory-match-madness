@@ -155,6 +155,8 @@ export default function MemoryMatchGame() {
       startTime: Date.now(),
     });
     setCurrentGameScore(1000000); // Initialize with max score (8 pairs * 125k)
+    setFinalScore(0); // Reset final score
+    setGameComplete(false); // Reset completion flag
     setScreen('game');
     setPrizeWon(null);
   };
@@ -321,21 +323,21 @@ export default function MemoryMatchGame() {
     }
   };
 
-  const endGame = async (won: boolean) => {
+  const endGame = async (won: boolean, scoreOverride?: number) => {
     console.log('=== END GAME START ===');
     console.log('Game won:', won);
+    console.log('scoreOverride:', scoreOverride);
     console.log('finalScore state:', finalScore);
     
-    // finalScore should already be set by useEffect when all pairs matched
-    // Use it directly
-    const scoreToUse = finalScore;
-    console.log('Using finalScore:', scoreToUse);
+    // Use override score if provided (from the useEffect), otherwise use finalScore state
+    const scoreToUse = scoreOverride || finalScore;
+    console.log('Using score:', scoreToUse);
     
     if (won && address && scoreToUse > 0) {
       console.log('Calling saveScoreAndCheckPrize with score:', scoreToUse);
       await saveScoreAndCheckPrize(scoreToUse);
     } else if (scoreToUse === 0) {
-      console.error('⚠️ WARNING: finalScore is 0! This should not happen.');
+      console.error('⚠️ WARNING: Score is 0! This should not happen.');
     }
     
     console.log('=== END GAME END ===');
@@ -348,6 +350,8 @@ export default function MemoryMatchGame() {
     }
   }, [gameState?.matched]);
 
+  const [gameComplete, setGameComplete] = useState(false);
+
   useEffect(() => {
     if (gameState && screen === 'game') {
       // Update score during gameplay
@@ -355,13 +359,22 @@ export default function MemoryMatchGame() {
       setCurrentGameScore(newScore);
       
       // If all pairs matched, freeze the final score immediately
-      if (gameState.matched.length === gameState.cards.length) {
+      if (gameState.matched.length === gameState.cards.length && !gameComplete) {
         console.log('🎯 All pairs matched! Freezing final score:', newScore);
         setFinalScore(newScore);
         setCurrentGameScore(newScore); // Also update current so it displays
+        setGameComplete(true);
+        
+        // Auto-advance to end screen after 1 second
+        setTimeout(async () => {
+          if (address) {
+            await saveScoreAndCheckPrize(newScore);
+          }
+          setScreen('end');
+        }, 1000);
       }
     }
-  }, [gameState?.matched, gameState?.wrong, gameState?.timeLeft, screen]);
+  }, [gameState?.matched, gameState?.wrong, gameState?.timeLeft, screen, gameComplete]);
 
   useEffect(() => {
     if (gameState && screen === 'game' && gameState.matched.length < gameState.cards.length) {
@@ -397,7 +410,7 @@ export default function MemoryMatchGame() {
   const dailyPool = contractState ? formatUSDC(contractState[0].toString()) : "0";
   const allTimePool = contractState ? formatUSDC(contractState[1].toString()) : "0";
 
-  const VERSION = "1.8";
+  const VERSION = "1.9";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-800 to-cyan-900 flex items-center justify-center p-4">
