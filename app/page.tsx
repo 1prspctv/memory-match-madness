@@ -274,11 +274,11 @@ export default function MemoryMatchGame() {
   const closePrizeScreen = async () => {
     if (!prizeStatus) return;
     
-    // Submit score to contract when user clicks Continue
     setSubmittingScore(true);
     try {
       console.log('Claiming prize...');
       
+      // Attempt to submit score
       await writeContractAsync({
         address: PRIZE_POOL_CONTRACT,
         abi: PRIZE_POOL_ABI,
@@ -291,16 +291,36 @@ export default function MemoryMatchGame() {
       // Close prize screen and show end screen
       setPrizeStatus(null);
       
-      // Refetch pools after prize screen closes (pools should be 0 now)
+      // Refetch pools after prize screen closes
       setTimeout(async () => {
         await refetchContractState();
       }, 1500);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to claim prize:', error);
       
-      // DON'T close prize screen on error - let them try again!
-      alert('Transaction failed. Please try again to claim your prize!');
+      // Parse error and show helpful message
+      let errorMessage = 'Transaction failed. ';
+      
+      if (error?.message?.includes('insufficient funds') || error?.message?.includes('gas')) {
+        errorMessage = '⛽ Insufficient ETH for gas fees.\n\n' +
+                      'You need a small amount of ETH on Base to claim your prize.\n\n' +
+                      `Send ~$1 of ETH to: ${address}\n\n` +
+                      'Then try claiming again!';
+      } else if (error?.message?.includes('rejected') || error?.message?.includes('denied')) {
+        errorMessage = '🚫 Transaction was rejected in your wallet.\n\n' +
+                      'Please approve the transaction to claim your prize.';
+      } else if (error?.message?.includes('network')) {
+        errorMessage = '🌐 Network error.\n\n' +
+                      'Please check your connection and try again.';
+      } else {
+        errorMessage = `❌ Transaction failed: ${error?.message?.slice(0, 100) || 'Unknown error'}\n\n` +
+                      'Please try again!';
+      }
+      
+      alert(errorMessage);
+      
+      // DON'T close prize screen - let them try again
       
     } finally {
       setSubmittingScore(false);
