@@ -288,17 +288,22 @@ export default function MemoryMatchGame() {
       
       console.log('✅ Prize claimed and sent to wallet!');
       
-    } catch (error) {
-      console.error('Failed to claim prize:', error);
-      alert('Failed to claim prize. Please try again.');
-    } finally {
-      setSubmittingScore(false);
-      setPrizeStatus(null); // Close prize screen
+      // Close prize screen and show end screen
+      setPrizeStatus(null);
       
       // Refetch pools after prize screen closes (pools should be 0 now)
       setTimeout(async () => {
         await refetchContractState();
       }, 1500);
+      
+    } catch (error) {
+      console.error('Failed to claim prize:', error);
+      
+      // DON'T close prize screen on error - let them try again!
+      alert('Transaction failed. Please try again to claim your prize!');
+      
+    } finally {
+      setSubmittingScore(false);
     }
   };
 
