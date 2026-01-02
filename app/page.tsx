@@ -239,7 +239,7 @@ export default function MemoryMatchGame() {
 
       // Check Supabase leaderboards (what UI shows)
       const supabaseDailyTop = dailyLeaderboard[0]?.score || 0;
-      const supabaseAllTimeTop = allTimeLeaderboard[0]?.score || 0;
+      const supabaseAllTimeTop = alltimeLeaderboard[0]?.score || 0;
       
       const beatsDailyInSupabase = score > supabaseDailyTop;
       const beatsAllTimeInSupabase = score > supabaseAllTimeTop;
