@@ -325,24 +325,17 @@ export default function MemoryMatchGame() {
     console.log('=== END GAME START ===');
     console.log('Game won:', won);
     console.log('finalScore state:', finalScore);
-    console.log('currentGameScore state:', currentGameScore);
     
-    // Calculate score now in case finalScore wasn't set yet
-    const currentScore = calcScore().final;
-    console.log('calcScore().final:', currentScore);
+    // finalScore should already be set by useEffect when all pairs matched
+    // Use it directly
+    const scoreToUse = finalScore;
+    console.log('Using finalScore:', scoreToUse);
     
-    const scoreToSubmit = finalScore > 0 ? finalScore : currentScore;
-    console.log('scoreToSubmit:', scoreToSubmit);
-    
-    // Update finalScore if it wasn't set
-    if (finalScore === 0) {
-      console.log('Setting finalScore to:', scoreToSubmit);
-      setFinalScore(scoreToSubmit);
-    }
-    
-    if (won && address) {
-      console.log('Calling saveScoreAndCheckPrize with score:', scoreToSubmit);
-      await saveScoreAndCheckPrize(scoreToSubmit);
+    if (won && address && scoreToUse > 0) {
+      console.log('Calling saveScoreAndCheckPrize with score:', scoreToUse);
+      await saveScoreAndCheckPrize(scoreToUse);
+    } else if (scoreToUse === 0) {
+      console.error('⚠️ WARNING: finalScore is 0! This should not happen.');
     }
     
     console.log('=== END GAME END ===');
@@ -363,7 +356,9 @@ export default function MemoryMatchGame() {
       
       // If all pairs matched, freeze the final score immediately
       if (gameState.matched.length === gameState.cards.length) {
+        console.log('🎯 All pairs matched! Freezing final score:', newScore);
         setFinalScore(newScore);
+        setCurrentGameScore(newScore); // Also update current so it displays
       }
     }
   }, [gameState?.matched, gameState?.wrong, gameState?.timeLeft, screen]);
@@ -402,7 +397,7 @@ export default function MemoryMatchGame() {
   const dailyPool = contractState ? formatUSDC(contractState[0].toString()) : "0";
   const allTimePool = contractState ? formatUSDC(contractState[1].toString()) : "0";
 
-  const VERSION = "1.7";
+  const VERSION = "1.8";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-800 to-cyan-900 flex items-center justify-center p-4">
@@ -535,7 +530,7 @@ export default function MemoryMatchGame() {
               <div className="font-bold text-xl text-gray-900">
                 ⏱️ {Math.floor(gameState.timeLeft / 60)}:{(gameState.timeLeft % 60).toString().padStart(2, '0')}
               </div>
-              <div className="font-bold text-xl text-gray-900">💰 {currentGameScore.toLocaleString()}</div>
+              <div className="font-bold text-xl text-gray-900">💰 {(finalScore > 0 ? finalScore : currentGameScore).toLocaleString()}</div>
               <div className="font-semibold text-red-600">❌ {gameState.wrong}</div>
             </div>
 
