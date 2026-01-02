@@ -208,12 +208,19 @@ export default function MemoryMatchGame() {
   const saveScoreAndCheckPrize = async (score: number) => {
     if (!address) return;
 
+    console.log('=== SAVE SCORE START ===');
+    console.log('Score parameter received:', score);
+    console.log('finalScore state:', finalScore);
+    console.log('currentGameScore state:', currentGameScore);
+
     setSubmittingScore(true);
     setLastPlayedScore(score);
     
     try {
       // Refetch contract state to get updated pool amounts after playGame transaction
       await refetchContractState();
+      
+      console.log('Saving to Supabase - Daily:', { game_id: 'memory-match-daily', score });
       
       // Save to Supabase first
       await submitScore({
@@ -223,12 +230,16 @@ export default function MemoryMatchGame() {
         metadata: { time: calcScore().elapsed, wrong: gameState?.wrong || 0 },
       });
       
+      console.log('Saving to Supabase - All-time:', { game_id: 'memory-match-alltime', score });
+      
       await submitScore({
         game_id: 'memory-match-alltime',
         wallet_address: address,
         score: score,
         metadata: { time: calcScore().elapsed, wrong: gameState?.wrong || 0 },
       });
+
+      console.log('✅ Scores saved to Supabase');
 
       // Reload leaderboards
       await loadLeaderboards();
@@ -311,13 +322,30 @@ export default function MemoryMatchGame() {
   };
 
   const endGame = async (won: boolean) => {
-    // finalScore is already set by the useEffect when all pairs matched
-    // Use that frozen value
-    const scoreToSubmit = finalScore;
+    console.log('=== END GAME START ===');
+    console.log('Game won:', won);
+    console.log('finalScore state:', finalScore);
+    console.log('currentGameScore state:', currentGameScore);
+    
+    // Calculate score now in case finalScore wasn't set yet
+    const currentScore = calcScore().final;
+    console.log('calcScore().final:', currentScore);
+    
+    const scoreToSubmit = finalScore > 0 ? finalScore : currentScore;
+    console.log('scoreToSubmit:', scoreToSubmit);
+    
+    // Update finalScore if it wasn't set
+    if (finalScore === 0) {
+      console.log('Setting finalScore to:', scoreToSubmit);
+      setFinalScore(scoreToSubmit);
+    }
     
     if (won && address) {
+      console.log('Calling saveScoreAndCheckPrize with score:', scoreToSubmit);
       await saveScoreAndCheckPrize(scoreToSubmit);
     }
+    
+    console.log('=== END GAME END ===');
     setScreen('end');
   };
 
@@ -374,7 +402,7 @@ export default function MemoryMatchGame() {
   const dailyPool = contractState ? formatUSDC(contractState[0].toString()) : "0";
   const allTimePool = contractState ? formatUSDC(contractState[1].toString()) : "0";
 
-  const VERSION = "1.5";
+  const VERSION = "1.7";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-800 to-cyan-900 flex items-center justify-center p-4">

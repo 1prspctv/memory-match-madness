@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     console.log('Request body:', { walletAddress, score });
 
-    if (!walletAddress || !score) {
+    if (!walletAddress || score === undefined || score === null) {
       console.error('Missing required fields');
       return NextResponse.json(
         { error: 'Missing walletAddress or score' },
