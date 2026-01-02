@@ -15,7 +15,7 @@ export function WalletConnect() {
         </span>
         <button
           onClick={() => disconnect()}
-          className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          className="px-4 py-2 text-sm border-2 border-gray-600 text-gray-700 bg-white rounded-lg hover:bg-gray-100 transition-colors font-medium"
         >
           Disconnect
         </button>
