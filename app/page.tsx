@@ -382,15 +382,15 @@ export default function MemoryMatchGame() {
             <p className="text-gray-600 mb-6">Test your skill to win prizes! Beat the high score and win instantly!</p>
 
             {address ? (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-6">
-                <p className="text-sm text-emerald-800 mb-3">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-6 flex flex-col items-center">
+                <p className="text-sm text-emerald-800 mb-3 text-center">
                   ✅ Wallet Connected: {formatWallet(address)}
                 </p>
                 <WalletConnect />
               </div>
             ) : (
-              <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 mb-6">
-                <p className="text-sm text-amber-800 font-semibold mb-3">
+              <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 mb-6 flex flex-col items-center">
+                <p className="text-sm text-amber-800 font-semibold mb-3 text-center">
                   ⚠️ Please connect your wallet to play
                 </p>
                 <WalletConnect />
