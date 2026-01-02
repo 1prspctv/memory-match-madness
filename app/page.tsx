@@ -81,7 +81,7 @@ export default function MemoryMatchGame() {
   const [lastPlayedScore, setLastPlayedScore] = useState<number | null>(null);
   const [finalScore, setFinalScore] = useState<number>(0);
   const [currentGameScore, setCurrentGameScore] = useState<number>(0);
-  const [prizeStatus, setPrizeStatus] = useState<{ wonDaily: boolean; wonAllTime: boolean; dailyAmount: string; allTimeAmount: string } | null>(null);
+  const [prizeStatus, setPrizeStatus] = useState<{ wonDaily: boolean; wonAllTime: boolean; dailyAmount: string; allTimeAmount: string; txHash?: string } | null>(null);
 
   // Read contract state
   const { data: contractState, refetch: refetchContractState } = useReadContract({
@@ -282,6 +282,7 @@ export default function MemoryMatchGame() {
           console.log('Won All-Time:', payoutResult.wonAllTime);
           console.log('Daily Prize:', payoutResult.dailyPrize);
           console.log('All-Time Prize:', payoutResult.allTimePrize);
+          console.log('TX Hash:', payoutResult.transactionHash);
           
           // Show prize celebration screen
           setPrizeStatus({
@@ -289,6 +290,7 @@ export default function MemoryMatchGame() {
             wonAllTime: payoutResult.wonAllTime,
             dailyAmount: payoutResult.dailyPrize || "0",
             allTimeAmount: payoutResult.allTimePrize || "0",
+            txHash: payoutResult.transactionHash,
           });
         } else {
           console.log('Contract says: Not a winner');
@@ -309,10 +311,12 @@ export default function MemoryMatchGame() {
   };
 
   const endGame = async (won: boolean) => {
-    const score = calcScore();
-    setFinalScore(score.final); // Store the final score at the moment the game ends
+    // finalScore is already set by the useEffect when all pairs matched
+    // Use that frozen value
+    const scoreToSubmit = finalScore;
+    
     if (won && address) {
-      await saveScoreAndCheckPrize(score.final);
+      await saveScoreAndCheckPrize(scoreToSubmit);
     }
     setScreen('end');
   };
@@ -370,7 +374,7 @@ export default function MemoryMatchGame() {
   const dailyPool = contractState ? formatUSDC(contractState[0].toString()) : "0";
   const allTimePool = contractState ? formatUSDC(contractState[1].toString()) : "0";
 
-  const VERSION = "1.4";
+  const VERSION = "1.5";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-800 to-cyan-900 flex items-center justify-center p-4">
@@ -596,6 +600,16 @@ export default function MemoryMatchGame() {
               <p className="text-xs text-green-700 mt-1">
                 Check your USDC balance - it should update in ~30 seconds.
               </p>
+              {prizeStatus.txHash && (
+                <a
+                  href={`https://basescan.org/tx/${prizeStatus.txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:text-blue-800 underline mt-2 block"
+                >
+                  View transaction on BaseScan →
+                </a>
+              )}
             </div>
 
             <button
