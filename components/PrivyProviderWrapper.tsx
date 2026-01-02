@@ -12,9 +12,6 @@ export default function PrivyProviderWrapper({ children }: { children: React.Rea
           theme: 'light',
           accentColor: '#0052FF', // Base blue
         },
-        embeddedWallets: {
-          createOnLogin: 'users-without-wallets',
-        },
         defaultChain: base,
         supportedChains: [base],
       }}

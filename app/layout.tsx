@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import './globals.css';
 import PrivyProviderWrapper from '@/components/PrivyProviderWrapper';
 import Providers from '@/components/Providers';
 
