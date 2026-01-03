@@ -643,7 +643,7 @@ export default function MemoryMatchGame() {
                   rel="noopener noreferrer"
                   className="text-xs text-blue-600 hover:text-blue-800 underline mt-2 block"
                 >
-                  View transaction on BaseScan →
+                  View USDC payout transaction on BaseScan →
                 </a>
               )}
             </div>
