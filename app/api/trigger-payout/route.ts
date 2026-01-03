@@ -91,16 +91,33 @@ export async function POST(req: NextRequest) {
     });
 
     // 2. Query Supabase for ACTUAL high scores (source of truth)
+    // Get top 2 to handle case where current player just became #1
     console.log('Querying Supabase for actual high scores...');
-    const dailyLeaderboard = await getTopScores('memory-match-daily', 1);
-    const allTimeLeaderboard = await getTopScores('memory-match-alltime', 1);
+    const dailyLeaderboard = await getTopScores('memory-match-daily', 2);
+    const allTimeLeaderboard = await getTopScores('memory-match-alltime', 2);
 
-    const supabaseDailyHigh = dailyLeaderboard[0]?.score || 0;
-    const supabaseAllTimeHigh = allTimeLeaderboard[0]?.score || 0;
+    // Get the previous high score (excluding current player if they're #1)
+    const getPreviousHighScore = (leaderboard: any[], currentWallet: string) => {
+      // If empty, previous high is 0
+      if (!leaderboard || leaderboard.length === 0) return 0;
 
-    console.log('Supabase high scores (SOURCE OF TRUTH):', {
+      // If top score is NOT the current player, that's the previous high
+      if (leaderboard[0].wallet_address.toLowerCase() !== currentWallet.toLowerCase()) {
+        return leaderboard[0].score;
+      }
+
+      // If top score IS the current player, get the second place score
+      // (or 0 if they're the only one)
+      return leaderboard[1]?.score || 0;
+    };
+
+    const supabaseDailyHigh = getPreviousHighScore(dailyLeaderboard, walletAddress);
+    const supabaseAllTimeHigh = getPreviousHighScore(allTimeLeaderboard, walletAddress);
+
+    console.log('Supabase high scores (SOURCE OF TRUTH - excluding current player):', {
       dailyHighScore: supabaseDailyHigh,
       allTimeHighScore: supabaseAllTimeHigh,
+      currentPlayerScore: score,
     });
 
     // 3. Determine if player won based on SUPABASE (not contract)
