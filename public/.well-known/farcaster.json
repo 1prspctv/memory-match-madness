@@ -1,0 +1,18 @@
+{
+  "miniapp": {
+    "version": "1",
+    "name": "Memory Match Madness",
+    "iconUrl": "https://memory-match-madness.vercel.app/icon.png",
+    "splashImageUrl": "https://memory-match-madness.vercel.app/splash.png",
+    "splashBackgroundColor": "#0052FF",
+    "homeUrl": "https://memory-match-madness.vercel.app",
+    "webhookUrl": "https://memory-match-madness.vercel.app/api/webhook",
+    "primaryCategory": "game",
+    "tags": ["game", "prizes", "memory"],
+    "heroImageUrl": "https://memory-match-madness.vercel.app/hero.png",
+    "ogImageUrl": "https://memory-match-madness.vercel.app/hero.png"
+  },
+  "baseBuilder": {
+    "ownerAddress": "0x17EceB5F8F44949913a7568284c3FF2d74766FCC"
+  }
+}
