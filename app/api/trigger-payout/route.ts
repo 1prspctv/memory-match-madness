@@ -1,9 +1,11 @@
 /**
  * Immediate Prize Payout API
- * 
+ *
  * Called immediately when a player finishes a game.
- * Checks if they won and triggers payout from backend wallet.
- * 
+ * Uses SUPABASE as the single source of truth for high scores.
+ * If player beats Supabase high score, triggers payout from backend wallet.
+ * The submitScore() contract call updates the contract as a side effect.
+ *
  * POST /api/trigger-payout
  * Body: { walletAddress: string, score: number }
  */
@@ -12,6 +14,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createWalletClient, http, createPublicClient } from 'viem';
 import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
+import { getTopScores } from '@/lib/leaderboard';
 
 const PRIZE_POOL_CONTRACT = process.env.NEXT_PUBLIC_PRIZE_POOL_CONTRACT as `0x${string}`;
 const PAYOUT_PRIVATE_KEY = process.env.PAYOUT_PRIVATE_KEY as `0x${string}`;
@@ -65,7 +68,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Read current contract state
+    // 1. Read current contract state (for prize pool amounts only)
     console.log('Reading contract state...');
     const publicClient = createPublicClient({
       chain: base,
@@ -79,22 +82,35 @@ export async function POST(req: NextRequest) {
     });
 
     const [dailyPool, allTimePool, dailyHighScore, allTimeHighScore] = contractState;
-    
-    console.log('Contract state:', {
+
+    console.log('Contract state (for reference):', {
       dailyPool: dailyPool.toString(),
       allTimePool: allTimePool.toString(),
       dailyHighScore: dailyHighScore.toString(),
       allTimeHighScore: allTimeHighScore.toString(),
     });
 
-    // 2. Determine if player won
-    const wonDaily = score > Number(dailyHighScore);
-    const wonAllTime = score > Number(allTimeHighScore);
+    // 2. Query Supabase for ACTUAL high scores (source of truth)
+    console.log('Querying Supabase for actual high scores...');
+    const dailyLeaderboard = await getTopScores('memory-match-daily', 1);
+    const allTimeLeaderboard = await getTopScores('memory-match-alltime', 1);
 
-    console.log('Win check:', {
+    const supabaseDailyHigh = dailyLeaderboard[0]?.score || 0;
+    const supabaseAllTimeHigh = allTimeLeaderboard[0]?.score || 0;
+
+    console.log('Supabase high scores (SOURCE OF TRUTH):', {
+      dailyHighScore: supabaseDailyHigh,
+      allTimeHighScore: supabaseAllTimeHigh,
+    });
+
+    // 3. Determine if player won based on SUPABASE (not contract)
+    const wonDaily = score > supabaseDailyHigh;
+    const wonAllTime = score > supabaseAllTimeHigh;
+
+    console.log('Win check (using Supabase as source of truth):', {
       playerScore: score,
-      dailyHighScore: Number(dailyHighScore),
-      allTimeHighScore: Number(allTimeHighScore),
+      supabaseDailyHigh,
+      supabaseAllTimeHigh,
       wonDaily,
       wonAllTime,
     });
@@ -107,7 +123,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 3. Player won! Submit score from backend wallet
+    // 4. Player won! Submit score from backend wallet (this also updates contract)
     const account = privateKeyToAccount(PAYOUT_PRIVATE_KEY);
     const walletClient = createWalletClient({
       account,
