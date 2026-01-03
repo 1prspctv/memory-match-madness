@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import PrivyProviderWrapper from '@/components/PrivyProviderWrapper';
+// import PrivyProviderWrapper from '@/components/PrivyProviderWrapper'; // Disabled for Base.dev verification
 import Providers from '@/components/Providers';
 
 export const metadata: Metadata = {
@@ -19,11 +19,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <PrivyProviderWrapper>
+        {/* Privy temporarily disabled - was causing Base.dev verification signing loop */}
+        {/* Re-enable after Base.dev verification is complete */}
+        {/* <PrivyProviderWrapper> */}
           <Providers>
             {children}
           </Providers>
-        </PrivyProviderWrapper>
+        {/* </PrivyProviderWrapper> */}
       </body>
     </html>
   );
