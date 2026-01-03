@@ -21,10 +21,13 @@ const PAYOUT_PRIVATE_KEY = process.env.PAYOUT_PRIVATE_KEY as `0x${string}`;
 
 const PRIZE_POOL_ABI = [
   {
-    name: 'submitScore',
+    name: 'submitScoreForPlayer',
     type: 'function',
     stateMutability: 'nonpayable',
-    inputs: [{ name: 'score', type: 'uint256' }],
+    inputs: [
+      { name: 'player', type: 'address' },
+      { name: 'score', type: 'uint256' }
+    ],
     outputs: [],
   },
   {
@@ -150,12 +153,13 @@ export async function POST(req: NextRequest) {
 
     console.log(`🎉 Winner detected! ${walletAddress} scored ${score}`);
     console.log(`Won Daily: ${wonDaily}, Won All-Time: ${wonAllTime}`);
+    console.log(`Calling submitScoreForPlayer for player: ${walletAddress}`);
 
     const hash = await walletClient.writeContract({
       address: PRIZE_POOL_CONTRACT,
       abi: PRIZE_POOL_ABI,
-      functionName: 'submitScore',
-      args: [BigInt(score)],
+      functionName: 'submitScoreForPlayer',
+      args: [walletAddress as `0x${string}`, BigInt(score)],
     });
 
     // 4. Calculate prize amounts
