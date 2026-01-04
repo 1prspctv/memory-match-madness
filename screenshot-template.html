@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Match Madness - Screenshot</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1a1a1a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .screenshot-container {
+      width: 1080px;
+      height: 1920px;
+      background: linear-gradient(180deg, #0052FF 0%, #0041CC 100%);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 80px 60px 120px 60px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .title {
+      font-size: 68px;
+      font-weight: 900;
+      color: #ffffff;
+      margin-bottom: 15px;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      line-height: 1;
+    }
+
+    .subtitle {
+      font-size: 28px;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 600;
+    }
+
+    /* Prize Pool */
+    .prize-pool {
+      background: rgba(255, 215, 0, 0.95);
+      color: #000;
+      padding: 30px;
+      border-radius: 24px;
+      margin-bottom: 50px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(255, 215, 0, 0.4);
+    }
+
+    .prize-label {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .prize-amount {
+      font-size: 72px;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .prize-currency {
+      font-size: 28px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    /* Game Board */
+    .game-board {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 32px;
+      padding: 50px;
+      margin-bottom: 50px;
+      backdrop-filter: blur(10px);
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 25px;
+      margin-bottom: 40px;
+    }
+
+    .game-card {
+      aspect-ratio: 1;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 80px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      background: rgba(255, 255, 255, 0.98);
+    }
+
+    .game-card.matched {
+      opacity: 0.5;
+      transform: scale(0.95);
+    }
+
+    /* Stats */
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .stat-box {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 25px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .stat-label {
+      font-size: 20px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 48px;
+      color: #ffffff;
+      font-weight: 900;
+    }
+
+    /* CTA */
+    .cta {
+      background: rgba(255, 215, 0, 0.95);
+      color: #000;
+      padding: 28px;
+      border-radius: 24px;
+      text-align: center;
+      font-size: 32px;
+      font-weight: 900;
+      box-shadow: 0 8px 32px rgba(255, 215, 0, 0.4);
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="screenshot-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="title">MEMORY MATCH<br>MADNESS</div>
+      <div class="subtitle">Match pairs & win USDC!</div>
+    </div>
+
+    <!-- Prize Pool -->
+    <div class="prize-pool">
+      <div class="prize-label">💰 DAILY PRIZE POOL</div>
+      <div class="prize-amount">25</div>
+      <div class="prize-currency">USDC</div>
+    </div>
+
+    <!-- Game Board -->
+    <div class="game-board">
+      <div class="cards-grid">
+        <div class="game-card">💎</div>
+        <div class="game-card matched">🌸</div>
+        <div class="game-card">👑</div>
+        <div class="game-card">🗼</div>
+        <div class="game-card matched">🌸</div>
+        <div class="game-card">🦋</div>
+        <div class="game-card">💎</div>
+        <div class="game-card">🦋</div>
+        <div class="game-card">👑</div>
+        <div class="game-card">🗼</div>
+        <div class="game-card">💎</div>
+        <div class="game-card">🌸</div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats">
+        <div class="stat-box">
+          <div class="stat-label">Score</div>
+          <div class="stat-value">1,250</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Moves</div>
+          <div class="stat-value">12</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Time</div>
+          <div class="stat-value">45s</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta">
+      Play Now & Win USDC! 🎮
+    </div>
+  </div>
+</body>
+</html>
