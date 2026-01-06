@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Match Madness - Logo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1a1a1a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .logo-container {
+      width: 800px;
+      height: 200px;
+      background: transparent;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    /* Icon part */
+    .logo-icon {
+      width: 140px;
+      height: 140px;
+      background: linear-gradient(135deg, #0052FF 0%, #0041CC 100%);
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      flex-shrink: 0;
+      box-shadow: 0 10px 30px rgba(0, 82, 255, 0.3);
+    }
+
+    .mini-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      z-index: 2;
+    }
+
+    .mini-card {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .prize-dot {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 215, 0, 0.95);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+      z-index: 3;
+    }
+
+    /* Text part */
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .logo-title {
+      font-size: 56px;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: -1.5px;
+      line-height: 1;
+      text-shadow: 0 4px 20px rgba(0, 82, 255, 0.5);
+    }
+
+    .logo-title-line1 {
+      background: linear-gradient(135deg, #0052FF 0%, #00D4FF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo-title-line2 {
+      background: linear-gradient(135deg, #0052FF 0%, #00D4FF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo-tagline {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    .tagline-highlight {
+      color: #FFD700;
+      font-weight: 700;
+    }
+
+    /* Background glow */
+    .glow {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(0, 82, 255, 0.15) 0%, transparent 70%);
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+      filter: blur(40px);
+      z-index: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo-container">
+    <div class="glow"></div>
+
+    <!-- Icon Part -->
+    <div class="logo-icon">
+      <div class="prize-dot">💰</div>
+      <div class="mini-cards">
+        <div class="mini-card">💎</div>
+        <div class="mini-card">👑</div>
+        <div class="mini-card">🌸</div>
+        <div class="mini-card">🦋</div>
+      </div>
+    </div>
+
+    <!-- Text Part -->
+    <div class="logo-text">
+      <div class="logo-title">
+        <div class="logo-title-line1">MEMORY MATCH</div>
+        <div class="logo-title-line2">MADNESS</div>
+      </div>
+      <div class="logo-tagline">
+        Win <span class="tagline-highlight">USDC</span> Prizes on Base
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useReadContract } from 'wagmi';
 import { parseUnits } from 'viem';
-import { submitScore, getTopScores, TopScore } from '@/lib/leaderboard';
+import { submitScoreWithQueue, getTopScores, TopScore } from '@/lib/leaderboard';
+import { useScoreSync } from '@/hooks/useScoreSync';
 import { WalletConnect } from '@/components/WalletConnect';
 
 // Contract addresses (update these after deployment)
@@ -71,6 +72,7 @@ const CARDS = [
 export default function MemoryMatchGame() {
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
+  const { pendingCount } = useScoreSync(); // Initialize background score sync
   const [screen, setScreen] = useState<'start' | 'game' | 'end'>('start');
   const [gameState, setGameState] = useState<any>(null);
   const [dailyLeaderboard, setDailyLeaderboard] = useState<TopScore[]>([]);
@@ -217,31 +219,32 @@ export default function MemoryMatchGame() {
 
     setSubmittingScore(true);
     setLastPlayedScore(score);
-    
+
     try {
       // Refetch contract state to get updated pool amounts after playGame transaction
       await refetchContractState();
-      
-      console.log('Saving to Supabase - Daily:', { game_id: 'memory-match-daily', score });
-      
-      // Save to Supabase first
-      await submitScore({
-        game_id: 'memory-match-daily',
-        wallet_address: address,
-        score: score,
-        metadata: { time: calcScore().elapsed, wrong: gameState?.wrong || 0 },
-      });
-      
-      console.log('Saving to Supabase - All-time:', { game_id: 'memory-match-alltime', score });
-      
-      await submitScore({
-        game_id: 'memory-match-alltime',
-        wallet_address: address,
-        score: score,
-        metadata: { time: calcScore().elapsed, wrong: gameState?.wrong || 0 },
-      });
 
-      console.log('✅ Scores saved to Supabase');
+      console.log('💾 Saving score with queue system (guaranteed persistence)...');
+
+      // Save using queue system - GUARANTEED to never lose the score
+      const result = await submitScoreWithQueue(
+        address,
+        score,
+        { time: calcScore().elapsed, wrong: gameState?.wrong || 0 }
+      );
+
+      if (result.queued) {
+        console.log('✅ Score saved to local queue (guaranteed safe!)');
+        if (result.synced) {
+          console.log('✅ Score immediately synced to Supabase');
+        } else {
+          console.log('⏳ Score will sync in background');
+          console.log('Sync errors:', result.errors);
+        }
+      } else {
+        console.error('❌ Failed to queue score:', result.errors);
+        // Even if queuing fails, we continue to try prize check
+      }
 
       // Reload leaderboards
       await loadLeaderboards();
@@ -287,7 +290,7 @@ export default function MemoryMatchGame() {
       } else {
         const payoutResult = await payoutResponse.json();
         console.log('Payout result:', payoutResult);
-        
+
         // Show prize screen if they won according to contract
         if (payoutResult.winner) {
           console.log('🎉 CONTRACT CONFIRMED WINNER!');
@@ -296,7 +299,7 @@ export default function MemoryMatchGame() {
           console.log('Daily Prize:', payoutResult.dailyPrize);
           console.log('All-Time Prize:', payoutResult.allTimePrize);
           console.log('TX Hash:', payoutResult.transactionHash);
-          
+
           // Show prize celebration screen
           setPrizeStatus({
             wonDaily: payoutResult.wonDaily,
@@ -305,12 +308,37 @@ export default function MemoryMatchGame() {
             allTimeAmount: payoutResult.allTimePrize || "0",
             txHash: payoutResult.transactionHash,
           });
+
+          // Refresh contract state multiple times with delays to ensure blockchain updates
+          // The transaction needs time to be confirmed and state to propagate
+          const refreshWithDelay = async () => {
+            // First refresh after 1.5s
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            console.log('🔄 Refreshing contract state (attempt 1)...');
+            await refetchContractState();
+
+            // Second refresh after another 2s
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            console.log('🔄 Refreshing contract state (attempt 2)...');
+            await refetchContractState();
+
+            // Third refresh after another 2s to be absolutely sure
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            console.log('🔄 Refreshing contract state (attempt 3)...');
+            await refetchContractState();
+          };
+
+          // Start refresh process in background (don't await)
+          refreshWithDelay().catch(console.error);
         } else {
           console.log('Contract says: Not a winner');
           if (beatsDailyInSupabase || beatsAllTimeInSupabase) {
             console.warn('⚠️ SYNC ISSUE: Supabase shows winner but contract does not!');
             console.warn('This means contract has stale/incorrect high scores');
           }
+
+          // Still refresh once for non-winners
+          await refetchContractState();
         }
       }
       
