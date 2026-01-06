@@ -290,7 +290,11 @@ export default function MemoryMatchGame() {
       } else {
         const payoutResult = await payoutResponse.json();
         console.log('Payout result:', payoutResult);
-        
+
+        // Always refresh contract state after payout attempt to show accurate pools
+        console.log('🔄 Refreshing contract state to show updated pools...');
+        await refetchContractState();
+
         // Show prize screen if they won according to contract
         if (payoutResult.winner) {
           console.log('🎉 CONTRACT CONFIRMED WINNER!');
@@ -299,7 +303,7 @@ export default function MemoryMatchGame() {
           console.log('Daily Prize:', payoutResult.dailyPrize);
           console.log('All-Time Prize:', payoutResult.allTimePrize);
           console.log('TX Hash:', payoutResult.transactionHash);
-          
+
           // Show prize celebration screen
           setPrizeStatus({
             wonDaily: payoutResult.wonDaily,
