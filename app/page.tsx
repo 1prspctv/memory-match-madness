@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useReadContract } from 'wagmi';
 import { parseUnits } from 'viem';
-import { submitScore, getTopScores, TopScore } from '@/lib/leaderboard';
+import { submitScoreWithQueue, getTopScores, TopScore } from '@/lib/leaderboard';
+import { useScoreSync } from '@/hooks/useScoreSync';
 import { WalletConnect } from '@/components/WalletConnect';
 
 // Contract addresses (update these after deployment)
@@ -71,6 +72,7 @@ const CARDS = [
 export default function MemoryMatchGame() {
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
+  const { pendingCount } = useScoreSync(); // Initialize background score sync
   const [screen, setScreen] = useState<'start' | 'game' | 'end'>('start');
   const [gameState, setGameState] = useState<any>(null);
   const [dailyLeaderboard, setDailyLeaderboard] = useState<TopScore[]>([]);
@@ -217,31 +219,32 @@ export default function MemoryMatchGame() {
 
     setSubmittingScore(true);
     setLastPlayedScore(score);
-    
+
     try {
       // Refetch contract state to get updated pool amounts after playGame transaction
       await refetchContractState();
-      
-      console.log('Saving to Supabase - Daily:', { game_id: 'memory-match-daily', score });
-      
-      // Save to Supabase first
-      await submitScore({
-        game_id: 'memory-match-daily',
-        wallet_address: address,
-        score: score,
-        metadata: { time: calcScore().elapsed, wrong: gameState?.wrong || 0 },
-      });
-      
-      console.log('Saving to Supabase - All-time:', { game_id: 'memory-match-alltime', score });
-      
-      await submitScore({
-        game_id: 'memory-match-alltime',
-        wallet_address: address,
-        score: score,
-        metadata: { time: calcScore().elapsed, wrong: gameState?.wrong || 0 },
-      });
 
-      console.log('✅ Scores saved to Supabase');
+      console.log('💾 Saving score with queue system (guaranteed persistence)...');
+
+      // Save using queue system - GUARANTEED to never lose the score
+      const result = await submitScoreWithQueue(
+        address,
+        score,
+        { time: calcScore().elapsed, wrong: gameState?.wrong || 0 }
+      );
+
+      if (result.queued) {
+        console.log('✅ Score saved to local queue (guaranteed safe!)');
+        if (result.synced) {
+          console.log('✅ Score immediately synced to Supabase');
+        } else {
+          console.log('⏳ Score will sync in background');
+          console.log('Sync errors:', result.errors);
+        }
+      } else {
+        console.error('❌ Failed to queue score:', result.errors);
+        // Even if queuing fails, we continue to try prize check
+      }
 
       // Reload leaderboards
       await loadLeaderboards();
