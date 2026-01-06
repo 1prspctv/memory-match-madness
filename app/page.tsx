@@ -291,10 +291,6 @@ export default function MemoryMatchGame() {
         const payoutResult = await payoutResponse.json();
         console.log('Payout result:', payoutResult);
 
-        // Always refresh contract state after payout attempt to show accurate pools
-        console.log('🔄 Refreshing contract state to show updated pools...');
-        await refetchContractState();
-
         // Show prize screen if they won according to contract
         if (payoutResult.winner) {
           console.log('🎉 CONTRACT CONFIRMED WINNER!');
@@ -312,12 +308,37 @@ export default function MemoryMatchGame() {
             allTimeAmount: payoutResult.allTimePrize || "0",
             txHash: payoutResult.transactionHash,
           });
+
+          // Refresh contract state multiple times with delays to ensure blockchain updates
+          // The transaction needs time to be confirmed and state to propagate
+          const refreshWithDelay = async () => {
+            // First refresh after 1.5s
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            console.log('🔄 Refreshing contract state (attempt 1)...');
+            await refetchContractState();
+
+            // Second refresh after another 2s
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            console.log('🔄 Refreshing contract state (attempt 2)...');
+            await refetchContractState();
+
+            // Third refresh after another 2s to be absolutely sure
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            console.log('🔄 Refreshing contract state (attempt 3)...');
+            await refetchContractState();
+          };
+
+          // Start refresh process in background (don't await)
+          refreshWithDelay().catch(console.error);
         } else {
           console.log('Contract says: Not a winner');
           if (beatsDailyInSupabase || beatsAllTimeInSupabase) {
             console.warn('⚠️ SYNC ISSUE: Supabase shows winner but contract does not!');
             console.warn('This means contract has stale/incorrect high scores');
           }
+
+          // Still refresh once for non-winners
+          await refetchContractState();
         }
       }
       
