@@ -140,6 +140,52 @@ export async function submitScoreToBoth(
 }
 
 /**
+ * Submit score with guaranteed persistence using queue system
+ * Score is saved to localStorage immediately, then synced to Supabase
+ */
+export async function submitScoreWithQueue(
+  walletAddress: string,
+  score: number,
+  metadata?: Record<string, any>
+): Promise<{ queued: boolean; synced: boolean; errors: string[] }> {
+  const { addPendingScore } = await import('./score-queue');
+  const { syncPendingScores } = await import('./score-sync');
+
+  try {
+    // 1. Save to localStorage FIRST (never fails)
+    addPendingScore(walletAddress, score, metadata);
+
+    console.log('✅ Score queued locally (guaranteed saved)');
+
+    // 2. Attempt immediate sync to Supabase
+    console.log('🔄 Attempting immediate sync to Supabase...');
+    const syncResult = await syncPendingScores();
+
+    const success = syncResult.synced > 0;
+
+    if (success) {
+      console.log('✅ Score immediately synced to Supabase');
+      return { queued: true, synced: true, errors: [] };
+    } else {
+      console.log('⏳ Score queued, will retry in background');
+      return {
+        queued: true,
+        synced: false,
+        errors: syncResult.errors,
+      };
+    }
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('❌ Failed to queue score:', error);
+    return {
+      queued: false,
+      synced: false,
+      errors: [errorMsg],
+    };
+  }
+}
+
+/**
  * Get top scores for a specific game
  */
 export async function getTopScores(
