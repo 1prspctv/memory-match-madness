@@ -1,0 +1,13 @@
+{
+  "name": "Memory Match Madness",
+  "description": "Win USDC prizes by matching card pairs in this blockchain-powered memory game",
+  "icon": "💎",
+  "coverImage": "",
+  "category": "game",
+  "keywords": ["game", "memory", "prizes", "usdc", "base"],
+  "socialLinks": {
+    "twitter": "",
+    "discord": "",
+    "website": ""
+  }
+}
