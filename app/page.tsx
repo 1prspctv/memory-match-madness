@@ -142,11 +142,80 @@ export default function MemoryMatchGame() {
     }
   };
 
+  // Helper function to check if two positions are adjacent in 4x4 grid
+  const areCardsAdjacent = (index1: number, index2: number): boolean => {
+    const row1 = Math.floor(index1 / 4);
+    const col1 = index1 % 4;
+    const row2 = Math.floor(index2 / 4);
+    const col2 = index2 % 4;
+
+    // Adjacent if: same row and columns differ by 1, OR same column and rows differ by 1
+    return (row1 === row2 && Math.abs(col1 - col2) === 1) ||
+           (col1 === col2 && Math.abs(row1 - row2) === 1);
+  };
+
+  // Check if any matching pairs are adjacent
+  const hasAdjacentPairs = (cards: typeof CARDS): boolean => {
+    for (let i = 0; i < cards.length; i++) {
+      for (let j = i + 1; j < cards.length; j++) {
+        if (cards[i].id === cards[j].id && areCardsAdjacent(i, j)) {
+          return true; // Found adjacent matching pair
+        }
+      }
+    }
+    return false; // All pairs are safe
+  };
+
+  // Fallback deterministic placement if random shuffling fails
+  const createNonAdjacentLayout = (selectedCards: typeof CARDS) => {
+    // Checkerboard-style placement to guarantee no adjacency
+    // Place pairs in positions that are never adjacent
+    const positions = [
+      [0, 6],   // pair 1: top-left, middle-right
+      [2, 8],   // pair 2: top-right-ish, bottom-left-ish
+      [5, 11],  // pair 3: middle, bottom-right-ish
+      [7, 12],  // pair 4: middle-right-ish, bottom-left
+      [1, 10],  // pair 5: top, bottom
+      [3, 13],  // pair 6: top-right, bottom
+      [4, 15],  // pair 7: middle-left, bottom-right
+      [9, 14],  // pair 8: middle, bottom
+    ];
+
+    const layout = new Array(16);
+    selectedCards.forEach((card, idx) => {
+      layout[positions[idx][0]] = { ...card, uid: positions[idx][0] };
+      layout[positions[idx][1]] = { ...card, uid: positions[idx][1] };
+    });
+
+    return layout;
+  };
+
   const startGame = () => {
+    const MAX_SHUFFLE_ATTEMPTS = 1000;
     const selected = [...CARDS].sort(() => Math.random() - 0.5).slice(0, 8);
-    const gameCards = [...selected, ...selected]
-      .map((card, i) => ({ ...card, uid: i }))
-      .sort(() => Math.random() - 0.5);
+
+    let gameCards = null;
+    let attempts = 0;
+
+    // Try to find valid random shuffle (no adjacent pairs)
+    while (attempts < MAX_SHUFFLE_ATTEMPTS) {
+      const shuffled = [...selected, ...selected]
+        .map((card, i) => ({ ...card, uid: i }))
+        .sort(() => Math.random() - 0.5);
+
+      if (!hasAdjacentPairs(shuffled)) {
+        gameCards = shuffled;
+        console.log(`✅ Valid shuffle found in ${attempts + 1} attempt(s)`);
+        break;
+      }
+      attempts++;
+    }
+
+    // Fallback if no valid shuffle found (extremely rare)
+    if (!gameCards) {
+      console.warn(`⚠️ Failed to find valid shuffle in ${MAX_SHUFFLE_ATTEMPTS} attempts, using deterministic layout`);
+      gameCards = createNonAdjacentLayout(selected);
+    }
 
     setGameState({
       cards: gameCards,
