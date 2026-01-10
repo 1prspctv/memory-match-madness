@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 // import PrivyProviderWrapper from '@/components/PrivyProviderWrapper'; // Disabled for Base.dev verification
 import Providers from '@/components/Providers';
@@ -12,6 +12,14 @@ const miniappEmbed = {
   splashBackgroundColor: minikitConfig.miniapp.splashBackgroundColor,
 };
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: '#0052FF',
+};
+
 export const metadata: Metadata = {
   title: minikitConfig.miniapp.ogTitle || minikitConfig.miniapp.name,
   description: minikitConfig.miniapp.ogDescription || minikitConfig.miniapp.description,
@@ -20,10 +28,16 @@ export const metadata: Metadata = {
     description: minikitConfig.miniapp.ogDescription || minikitConfig.miniapp.description,
     images: [minikitConfig.miniapp.ogImageUrl],
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: minikitConfig.miniapp.name,
+  },
   other: {
     'base:app_id': '69584622c63ad876c9081e30',
     'fc:miniapp': JSON.stringify(miniappEmbed),
     'fc:frame': JSON.stringify(miniappEmbed), // Backward compatibility
+    'mobile-web-app-capable': 'yes',
   },
 };
 
